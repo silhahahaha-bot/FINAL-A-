@@ -54,7 +54,7 @@
         .status-right {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
 
         /* Nút tải lại video khi bị đứng / không chạy */
@@ -63,10 +63,10 @@
             background-color: var(--warning);
             color: #0f172a;
             border: none;
-            padding: 6px 14px;
+            padding: 6px 12px;
             border-radius: 6px;
             font-weight: 700;
-            font-size: 0.88rem;
+            font-size: 0.85rem;
             cursor: pointer;
             transition: background 0.2s;
         }
@@ -82,16 +82,34 @@
             background-color: var(--success);
             color: white;
             border: 2px solid #bbf7d0;
-            padding: 6px 14px;
+            padding: 6px 12px;
             border-radius: 6px;
             font-weight: 700;
-            font-size: 0.88rem;
+            font-size: 0.85rem;
             cursor: pointer;
             transition: background 0.2s;
         }
 
         .resume-video-btn:hover {
             background-color: #15803d;
+        }
+
+        /* Nút bỏ qua Speaking (yêu cầu mã PIN giáo viên) */
+        .skip-btn {
+            display: none;
+            background-color: rgba(255, 255, 255, 0.18);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .skip-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
         }
 
         .violation-badge {
@@ -442,8 +460,8 @@
             padding: 20px;
         }
 
-        /* Cửa sổ cảnh báo vi phạm / nhắc bật lại Fullscreen */
-        #warning-modal {
+        /* Cửa sổ cảnh báo vi phạm & Cửa sổ nhập mã PIN bỏ qua Speaking */
+        .modal-overlay {
             display: none;
             position: fixed;
             inset: 0;
@@ -475,6 +493,43 @@
             line-height: 1.5;
             color: #334155;
         }
+
+        .pin-input {
+            width: 100%;
+            padding: 12px;
+            font-size: 1.3rem;
+            text-align: center;
+            letter-spacing: 6px;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            outline: none;
+            margin-bottom: 10px;
+        }
+
+        .pin-input:focus {
+            border-color: var(--primary);
+        }
+
+        .pin-error {
+            color: var(--danger);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 14px;
+            min-height: 20px;
+        }
+
+        .modal-btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-cancel {
+            background-color: #94a3b8;
+        }
+
+        .btn-cancel:hover {
+            background-color: #64748b;
+        }
     </style>
 </head>
 <body>
@@ -488,6 +543,8 @@
             <button id="btn-reload-video" class="reload-btn" onclick="reloadSpeakingVideo()">🔄 Tải lại video</button>
             <!-- Nút xác nhận đã chỉnh xong video để khóa lại và đếm giờ tiếp -->
             <button id="btn-resume-video" class="resume-video-btn" onclick="confirmVideoAdjusted()">✅ Đã chỉnh xong - Tiếp tục thi</button>
+            <!-- Nút bỏ qua Speaking (dành cho ca lỗi video không phát được, có mã PIN giáo viên) -->
+            <button id="btn-skip-speaking" class="skip-btn" onclick="openSkipModal()">⏭️ Bỏ qua Speaking</button>
             <div class="violation-badge">Vi phạm: <span id="violation-count">0</span>/2</div>
             <div class="timer-box" id="timer-display">12:00</div>
         </div>
@@ -548,7 +605,6 @@
     <div id="part3" class="screen">
         <div class="split-container">
             <div class="left-pane">
-                <!-- LINK ĐỀ WRITING PART 1 -->
                 <iframe src="https://docs.google.com/document/d/1a6ZTQkZRa8Bfp-K9FCldV2cALJzQMYRFSvEmeUp623Q/preview"></iframe>
             </div>
             <div class="right-pane">
@@ -583,7 +639,6 @@
     <div id="part4" class="screen">
         <div class="split-container">
             <div class="left-pane">
-                <!-- LINK ĐỀ WRITING PART 2 - EMAIL 1 -->
                 <iframe src="https://docs.google.com/document/d/15Aen3aNQJ09qo1miAGqcRBqjFPoUyK9k96fhau_JhLo/preview"></iframe>
             </div>
             <div class="right-pane">
@@ -605,7 +660,6 @@
     <div id="part5" class="screen">
         <div class="split-container">
             <div class="left-pane">
-                <!-- LINK ĐỀ WRITING PART 2 - EMAIL 2 -->
                 <iframe src="https://docs.google.com/document/d/1svzc9FNIpBSX0U4xDlyE-QpRNtuoB-oziJWu-x9SXYw/preview"></iframe>
             </div>
             <div class="right-pane">
@@ -627,7 +681,6 @@
     <div id="part6" class="screen">
         <div class="split-container">
             <div class="left-pane">
-                <!-- LINK ĐỀ WRITING PART 3 -->
                 <iframe src="https://docs.google.com/document/d/1dZscZFipf7pH1lqOieGK2WiC5HhX5EvnmUyrFI6VVU4/preview"></iframe>
             </div>
             <div class="right-pane">
@@ -661,7 +714,7 @@
     </div>
 
     <!-- MODAL CẢNH BÁO VI PHẠM -->
-    <div id="warning-modal">
+    <div id="warning-modal" class="modal-overlay">
         <div class="modal-card">
             <h3>⚠️ CẢNH BÁO VI PHẠM (Lần 1/2)</h3>
             <p id="warning-desc">Bạn vừa thoát chế độ toàn màn hình hoặc chuyển sang cửa sổ khác. Nếu tái phạm thêm 1 lần nữa, bài thi sẽ tự động kết thúc và nộp ngay lập tức!</p>
@@ -669,9 +722,24 @@
         </div>
     </div>
 
+    <!-- MODAL NHẬP MÃ PIN ĐỂ BỎ QUA SPEAKING -->
+    <div id="skip-modal" class="modal-overlay">
+        <div class="modal-card">
+            <h3 style="color: var(--primary);">⏭️ BỎ QUA PHẦN SPEAKING</h3>
+            <p>Chỉ sử dụng khi video gặp sự cố không thể phát. Vui lòng nhập mã xác nhận của giám thị để chuyển thẳng sang Writing:</p>
+            <input type="password" id="skip-pin-input" class="pin-input" placeholder="••••" maxlength="10" onkeydown="if(event.key==='Enter') confirmSkipSpeaking()">
+            <div id="skip-pin-error" class="pin-error"></div>
+            <div class="modal-btn-group">
+                <button class="btn btn-cancel" onclick="closeSkipModal()">Hủy</button>
+                <button class="btn" onclick="confirmSkipSpeaking()">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // --- LINK VIDEO GOOGLE DRIVE ---
+        // --- CẤU HÌNH LINK VIDEO & MÃ PIN ---
         const DRIVE_VIDEO_URL = "https://drive.google.com/file/d/1NCc1vj_rpamlIABNwMRVeT7G44D8k5Gh/preview";
+        const TEACHER_SKIP_PIN = "4869"; // Mã PIN giáo viên để bỏ qua phần Speaking
 
         // --- CẤU HÌNH THỜI GIAN (Đơn vị: Giây) ---
         const TIME_PART_2 = 12 * 60;     // 12 phút = 720 giây (Speaking)
@@ -687,10 +755,11 @@
         let timerInterval = null;
         let timeLeft = 0;
         let violations = 0;
-        let videoReloadCount = 0;        // Đếm số lần học viên bấm tải lại video
+        let videoReloadCount = 0;
+        let speakingStatus = "Hoàn thành bình thường";
         let isExamRunning = false;
         let isSpeakingLocked = false;
-        let isManualAdjusting = false;   // Trạng thái đang mở khóa tạm thời để chỉnh video
+        let isManualAdjusting = false;
         let lastViolationTime = 0;
         let submissionNote = "Nộp bài đúng quy định";
 
@@ -730,20 +799,24 @@
             document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
             document.getElementById('reload-banner').style.display = 'none';
             document.getElementById('btn-resume-video').style.display = 'none';
+            document.getElementById('skip-modal').style.display = 'none';
 
             const videoIframe = document.getElementById('speaking-video');
             const reloadBtn = document.getElementById('btn-reload-video');
+            const skipBtn = document.getElementById('btn-skip-speaking');
 
-            // Nếu rời khỏi Phần 2, ngắt hoàn toàn âm thanh video và ẩn nút tải lại
+            // Nếu rời khỏi Phần 2, ngắt hoàn toàn âm thanh video và ẩn các nút hỗ trợ Speaking
             if (partNumber !== 2) {
                 if (videoIframe) videoIframe.src = "about:blank";
                 reloadBtn.style.display = 'none';
+                skipBtn.style.display = 'none';
             }
 
             if (partNumber === 2) {
                 document.getElementById('part2').classList.add('active');
                 document.getElementById('section-name').textContent = "SPEAKING";
                 reloadBtn.style.display = 'inline-block';
+                skipBtn.style.display = 'inline-block';
 
                 timeLeft = TIME_PART_2;
                 updateTimerUI();
@@ -773,21 +846,46 @@
             }
         }
 
+        // MỞ / ĐÓNG / XÁC NHẬN MÃ PIN BỎ QUA SPEAKING
+        function openSkipModal() {
+            if (!isExamRunning || currentPart !== 2) return;
+            document.getElementById('skip-pin-input').value = "";
+            document.getElementById('skip-pin-error').textContent = "";
+            document.getElementById('skip-modal').style.display = 'flex';
+            setTimeout(() => document.getElementById('skip-pin-input').focus(), 50);
+        }
+
+        function closeSkipModal() {
+            document.getElementById('skip-modal').style.display = 'none';
+        }
+
+        function confirmSkipSpeaking() {
+            const enteredPin = document.getElementById('skip-pin-input').value.trim();
+            if (enteredPin === TEACHER_SKIP_PIN) {
+                speakingStatus = "Đã bỏ qua (có mã xác nhận GV)";
+                closeSkipModal();
+                goToPart(3);
+            } else {
+                document.getElementById('skip-pin-error').textContent = "❌ Mã PIN không chính xác!";
+                document.getElementById('skip-pin-input').value = "";
+                document.getElementById('skip-pin-input').focus();
+            }
+        }
+
         // NÚT TẢI LẠI VIDEO & MỞ KHÓA TẠM THỜI ĐỂ CHỈNH TỚI CÂU ĐANG LÀM DỞ
         function reloadSpeakingVideo() {
             if (!isExamRunning || currentPart !== 2) return;
 
             videoReloadCount++;
-            clearInterval(timerInterval); // Tạm dừng đồng hồ ngay lập tức
+            clearInterval(timerInterval);
             isSpeakingLocked = false;
-            isManualAdjusting = true;     // Bật chế độ chỉnh tay -> không tự khóa lại liền khi bấm vô video
+            isManualAdjusting = true;
 
             document.getElementById('video-blocker').style.display = 'none';
             document.getElementById('btn-reload-video').style.display = 'none';
             document.getElementById('btn-resume-video').style.display = 'inline-block';
             document.getElementById('reload-banner').style.display = 'flex';
 
-            // Nạp lại khung video Google Drive
             const videoIframe = document.getElementById('speaking-video');
             videoIframe.src = "about:blank";
             setTimeout(() => {
@@ -808,11 +906,9 @@
             document.getElementById('btn-resume-video').style.display = 'none';
             document.getElementById('btn-reload-video').style.display = 'inline-block';
 
-            // Khóa cứng mặt kính lại & trả quyền bàn phím về trang chính
             document.getElementById('video-blocker').style.display = 'block';
             window.focus();
 
-            // Tiếp tục đếm ngược từ số giây hiện tại
             startTimer(timeLeft, () => goToPart(3));
         }
 
@@ -820,14 +916,12 @@
         window.addEventListener('blur', () => {
             setTimeout(() => {
                 const videoIframe = document.getElementById('speaking-video');
-                // Chỉ tự động khóa ở lần bấm đầu tiên (khi KHÔNG ở chế độ mở khóa chỉnh tay isManualAdjusting)
                 if (isExamRunning && currentPart === 2 && !isSpeakingLocked && !isManualAdjusting && document.activeElement === videoIframe) {
                     isSpeakingLocked = true;
 
                     document.getElementById('speaking-video-wrapper').classList.add('expanded-fullscreen');
                     document.getElementById('speaking-status').style.display = 'none';
 
-                    // Chờ 1.5 giây (1500ms) cho lệnh Play ăn vào Google Drive rồi mới khóa kính & chạy đồng hồ
                     setTimeout(() => {
                         if (!isExamRunning || currentPart !== 2 || !isSpeakingLocked || isManualAdjusting) return;
 
@@ -869,7 +963,7 @@
             }
         }
 
-        // 4. ĐẾM SỐ TỪ Ở WRITING PART 2 (EMAIL 1, EMAIL 2) & WRITING PART 3
+        // 4. ĐẾM SỐ TỪ Ở WRITING PART 2 & PART 3
         function updateWordCountW2_1() {
             const words = countWords(document.getElementById('w2_email1').value);
             document.getElementById('word-count-w2-1').textContent = `Số từ: ${words}`;
@@ -925,6 +1019,7 @@
             }
 
             document.getElementById('warning-modal').style.display = 'none';
+            document.getElementById('skip-modal').style.display = 'none';
             document.getElementById('reload-banner').style.display = 'none';
             document.getElementById('top-bar').style.display = 'none';
             document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
@@ -964,12 +1059,13 @@
 `=========================================
         KẾT QUẢ BÀI KIỂM TRA WRITING
 =========================================
-Họ và tên     : ${studentName}
-Lớp           : ${studentClass}
-Thời gian     : ${now}
-Vi phạm       : ${violations}/2 lần
-Tải lại video : ${videoReloadCount} lần
-Ghi chú       : ${submissionNote}
+Họ và tên           : ${studentName}
+Lớp                 : ${studentClass}
+Thời gian           : ${now}
+Vi phạm             : ${violations}/2 lần
+Trạng thái Speaking : ${speakingStatus}
+Tải lại video       : ${videoReloadCount} lần
+Ghi chú             : ${submissionNote}
 
 -----------------------------------------
 PHẦN 1/4: WRITING PART 1
@@ -1055,9 +1151,10 @@ ${essay}
             }
         }
 
-        // Chặn học viên dùng bàn phím (Space, K, Mũi tên) để dừng/tua video khi đang ở Phần 2 (trừ lúc đang mở khóa chỉnh tay)
+        // Chặn học viên dùng bàn phím (Space, K, Mũi tên) để dừng/tua video khi đang ở Phần 2 (trừ lúc đang mở khóa chỉnh tay hoặc nhập mã PIN)
         document.addEventListener('keydown', (e) => {
-            if (isExamRunning && currentPart === 2 && !isManualAdjusting) {
+            const isSkipOpen = document.getElementById('skip-modal').style.display === 'flex';
+            if (isExamRunning && currentPart === 2 && !isManualAdjusting && !isSkipOpen) {
                 if (['Space', 'KeyK', 'ArrowLeft', 'ArrowRight', 'MediaPlayPause'].includes(e.code)) {
                     e.preventDefault();
                 }
